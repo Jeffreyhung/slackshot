@@ -35,7 +35,9 @@
   const BRACKET = new RegExp(String.raw`^(.*?)\s+\[` + TIME + String.raw`\]\s*$`);
   const BARE = new RegExp(String.raw`^(\S.{0,48}?)\s{2,}(\d{1,2}:\d{2}\s?[AaPp][Mm])\s*$`);
 
-  const isName = (s) => s.length > 0 && s.length <= 50 && s.split(/\s+/).length <= 5 &&
+  const CONT = new RegExp(String.raw`^\s*\[` + TIME + String.raw`\]\s*(.*)$`);
+
+  const isName =(s) => s.length > 0 && s.length <= 50 && s.split(/\s+/).length <= 5 &&
     !/[!?:;]|[.,]\s|[.!?]\S|https?:|^[@•\-*>`#(]/.test(s);
 
   function strictHeader(line) {
@@ -57,6 +59,15 @@
     const body = (l) => { if (!cur) push('', ''); cur.lines.push(l); };
 
     for (const l of lines) {
+      // "[8:47 AM]text": a follow-up message from the same person, copied without a name
+      const c = CONT.exec(l);
+      if (c) {
+        const name = cur ? cur.name : '';
+        push(name, c[1]);
+        cur.cont = !!name;
+        if (c[2].trim()) cur.lines.push(c[2]);
+        continue;
+      }
       const h = strictHeader(l);
       if (h) { push(h.name, h.time); continue; }
       // A header glued to the end of the previous message ("…the problem.Max Kosty  [3:12 PM]")
@@ -82,7 +93,7 @@
       while (m.lines.length && !m.lines[0].trim()) m.lines.shift();
       while (m.lines.length && !m.lines[m.lines.length - 1].trim()) m.lines.pop();
     }
-    return { msgs: msgs.filter((m) => m.name || m.lines.length), names };
+    return { msgs: msgs.filter((m) => m.lines.length || (m.name && !m.cont)), names };
   }
 
   function toBlocks(lines) {
@@ -173,15 +184,15 @@
     if (!msgs.length) { card.append(el('div', 'empty', 'Paste a conversation on the left to see it here.')); return; }
 
     for (const m of msgs) {
-      const row = el('div', 'msg');
-      const av = el('div', 'avatar' + (m.name ? '' : ' none'));
-      if (m.name) {
+      const row = el('div', 'msg' + (m.cont ? ' cont' : ''));
+      const av = el('div', 'avatar' + (m.name && !m.cont ? '' : ' none'));
+      if (m.name && !m.cont) {
         av.dataset.name = m.name; av.title = 'Click to set a photo for ' + m.name;
         if (avatars[m.name]) { const img = el('img'); img.src = avatars[m.name]; img.alt = ''; av.append(img); }
         else { av.style.background = colorFor(m.name); av.textContent = initials(m.name); }
       }
       const content = el('div', 'content');
-      if (m.name) {
+      if (m.name && !m.cont) {
         const head = el('div', 'head');
         head.append(el('span', 'name', m.name));
         if (m.time) head.append(el('span', 'time', (prefix ? prefix + ' ' : '') + m.time));
