@@ -32,5 +32,14 @@ Push to GitHub, then in the repository go to **Settings → Pages**, choose
 The `CNAME` file sets the custom domain to `slack.dante.tw`. In DNS, add a
 `CNAME` record for `slack` pointing to `<github-username>.github.io`.
 
-The page loads the Lato font from Google Fonts and `html-to-image` from
-jsDelivr at runtime.
+## Security
+
+- No third-party requests at runtime. `html-to-image` 1.11.11 and the Lato
+  font (from `@fontsource/lato` 5.0.8) are checked in under `vendor/`.
+- A Content-Security-Policy in `index.html` allows scripts, styles, fonts and
+  network connections from this origin only, so pasted text cannot be sent
+  anywhere else. Keep CSS and JS in files; inline `<script>`/`<style>` and
+  `style="…"` attributes are blocked.
+- Pasted text is only ever inserted with `textContent`, never as HTML.
+- GitHub Pages cannot send response headers, so `frame-ancestors` /
+  `X-Frame-Options` are not set.
