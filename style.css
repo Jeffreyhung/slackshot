@@ -63,3 +63,9 @@ button:disabled { opacity: .6; cursor: default; }
 .quote { border-left: 4px solid var(--code-line); padding-left: 12px; }
 .edited { font-size: 13px; color: var(--dim); }
 .empty { color: var(--dim); padding: 24px 8px; }
+
+/* compact layout: time on the left, coloured name inline, no avatars */
+.compact .msg { gap: 10px; padding: 4px 0; align-items: baseline; }
+.compact .msg:not(.cont) + .msg.cont, .compact .msg.cont + .msg:not(.cont) { margin-top: 0; }
+.compact .time { flex: none; font-size: 13px; text-align: right; white-space: nowrap; }
+.compact .msg.cont .content { padding-left: 8px; }

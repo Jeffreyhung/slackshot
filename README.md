@@ -11,7 +11,8 @@ avatar photos you pick are kept in `localStorage`.
 1. Select messages in Slack, copy, and paste into the box.
 2. Optionally set a time prefix ("Yesterday at"), the handles to highlight as
    your own mentions, theme, width and frame.
-3. Click an avatar to use a real photo (Alt-click removes it).
+3. Pick a layout: **Compact** (default; time on the left, coloured names, no
+   avatars) or **With avatars**. In the avatar layout, click an avatar to use a real photo (Alt-click removes it).
 4. **Download PNG** or **Copy image**.
 
 Copied Slack text loses formatting, so add it back where you want it:

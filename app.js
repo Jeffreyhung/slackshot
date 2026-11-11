@@ -137,6 +137,8 @@
   const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const COLORS = ['#e01e5a', '#2eb67d', '#36c5f0', '#ecb22e', '#4a154b', '#1264a3', '#e8912d', '#007a5a', '#9b59b6', '#d94f70'];
   const colorFor = (name) => { let h = 0; for (const c of name) h = (h * 31 + c.codePointAt(0)) >>> 0; return COLORS[h % COLORS.length]; };
+  const NAME_COLORS = ['#35a7c4', '#a8327e', '#2e9e6b', '#c9731a', '#6b5fd3', '#c2385a', '#1f7fbf', '#7a8b1f'];
+  const nameColor = (name) => { let h = 7; for (const c of name) h = (h * 33 + c.codePointAt(0)) >>> 0; return NAME_COLORS[h % NAME_COLORS.length]; };
   const initials = (name) => name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('');
 
   function inline(parent, text, ctx) {
@@ -180,8 +182,47 @@
     const shot = $('shot'), card = $('card');
     shot.className = [$('theme').value === 'dark' ? 'dark' : '', $('framed').checked ? 'framed' : ''].join(' ').trim();
     card.style.width = $('width').value + 'px';
+    const compact = $('layout').value === 'compact';
+    card.className = 'card' + (compact ? ' compact' : '');
     card.replaceChildren();
     if (!msgs.length) { card.append(el('div', 'empty', 'Paste a conversation on the left to see it here.')); return; }
+
+    const buildBody = (m) => {
+      const bodyEl = el('div', 'body');
+      for (const b of toBlocks(m.lines)) {
+        if (b.t === 'code') bodyEl.append(el('pre', '', b.text));
+        else if (b.t === 'li') { const li = el('div', 'li'); li.append(el('span', 'dot', '•'), lines(el('span'), [b.text], ctx)); bodyEl.append(li); }
+        else if (b.t === 'quote') bodyEl.append(lines(el('div', 'quote'), b.lines, ctx));
+        else bodyEl.append(lines(el('p'), b.lines, ctx));
+      }
+      return bodyEl;
+    };
+
+    if (compact) {
+      // Slack's compact theme: time on the left, coloured name inline, no avatars.
+      const times = [];
+      for (const m of msgs) {
+        const head = m.name && !m.cont;
+        const row = el('div', 'msg' + (m.cont ? ' cont' : ''));
+        const time = el('span', 'time', head && m.time ? (prefix ? prefix + ' ' : '') + m.time : '');
+        times.push(time);
+        const bodyEl = buildBody(m);
+        if (head) {
+          const name = el('span', 'name', m.name);
+          name.style.color = nameColor(m.name);
+          let first = bodyEl.firstElementChild;
+          if (!first || first.tagName !== 'P') { first = el('p'); bodyEl.prepend(first); }
+          first.prepend(name, ' ');
+        }
+        const content = el('div', 'content');
+        content.append(bodyEl);
+        row.append(time, content);
+        card.append(row);
+      }
+      const w = Math.ceil(Math.max(0, ...times.map((t) => t.getBoundingClientRect().width)));
+      for (const t of times) t.style.width = w + 'px';
+      return;
+    }
 
     for (const m of msgs) {
       const row = el('div', 'msg' + (m.cont ? ' cont' : ''));
@@ -198,14 +239,7 @@
         if (m.time) head.append(el('span', 'time', (prefix ? prefix + ' ' : '') + m.time));
         content.append(head);
       }
-      const bodyEl = el('div', 'body');
-      for (const b of toBlocks(m.lines)) {
-        if (b.t === 'code') bodyEl.append(el('pre', '', b.text));
-        else if (b.t === 'li') { const li = el('div', 'li'); li.append(el('span', 'dot', '•'), lines(el('span'), [b.text], ctx)); bodyEl.append(li); }
-        else if (b.t === 'quote') bodyEl.append(lines(el('div', 'quote'), b.lines, ctx));
-        else bodyEl.append(lines(el('p'), b.lines, ctx));
-      }
-      content.append(bodyEl);
+      content.append(buildBody(m));
       row.append(av, content);
       card.append(row);
     }
@@ -261,7 +295,7 @@
   }, 'Copied to clipboard.'));
 
   // ---------- wiring ----------
-  for (const id of ['prefix', 'me', 'theme', 'width', 'framed']) {
+  for (const id of ['layout', 'prefix', 'me', 'theme', 'width', 'framed']) {
     const e = $(id), key = e.type === 'checkbox' ? 'checked' : 'value';
     const saved = store.get(id, null);
     if (saved != null) e[key] = saved;
@@ -270,4 +304,5 @@
   $('input').value = SAMPLE;
   $('input').addEventListener('input', render);
   render();
+  document.fonts.ready.then(render); // compact layout measures the time column
 })();

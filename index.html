@@ -18,6 +18,7 @@
   <section class="left">
     <textarea id="input" spellcheck="false" placeholder="Paste Slack messages here…"></textarea>
     <div class="opts">
+      <label>Layout <select id="layout"><option value="compact">Compact (no avatars)</option><option value="avatars">With avatars</option></select></label>
       <label>Time prefix <input type="text" id="prefix" placeholder="e.g. Yesterday at"></label>
       <label>Highlight mentions of <input type="text" id="me" placeholder="e.g. jeffrey, Jeffrey Hung"></label>
       <label>Theme <select id="theme"><option value="light">Light</option><option value="dark">Dark</option></select></label>
@@ -29,7 +30,7 @@
       <button id="copy">Copy image</button>
       <span id="status"></span>
     </div>
-    <p class="hint">Click an avatar to use a real photo. Wrap text in <code>```</code> for a code block or <code>`backticks`</code> for inline code; start a line with <code>&gt;</code> for a quote.</p>
+    <p class="hint">In the avatar layout, click an avatar to use a real photo. Wrap text in <code>```</code> for a code block or <code>`backticks`</code> for inline code; start a line with <code>&gt;</code> for a quote.</p>
     <input type="file" id="file" accept="image/*" hidden>
   </section>
   <section class="right">
