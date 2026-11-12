@@ -3,8 +3,10 @@
 Paste a copied Slack conversation, get a clean PNG that looks like Slack.
 
 It is a single static page (`index.html`). Parsing and rendering happen in the
-browser; the conversation is never uploaded or stored. Only settings and any
-avatar photos you pick are kept in `localStorage`.
+browser; the conversation is never uploaded. Pasted text and avatar photos are
+held in memory only and are gone after a refresh. Only display settings (layout,
+theme, width, frame, time prefix, your mention handles) are kept in
+`localStorage`.
 
 ## Use
 

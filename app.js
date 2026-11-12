@@ -19,16 +19,15 @@
     'Found a bug. Literally.',
   ].join('\n');
 
-  // ---------- storage (settings and avatars only, never the conversation) ----------
+  // ---------- storage (display settings only; the conversation and avatars live in memory) ----------
   const store = {
     get(k, d) { try { const v = localStorage.getItem('slackshot:' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
     set(k, v) { try { localStorage.setItem('slackshot:' + k, JSON.stringify(v)); } catch {} },
   };
-  // Only accept avatar entries that are the PNG data URLs this page itself wrote.
+  // Avatars are keyed by participant name, so keep them in memory only and
+  // remove any copy an earlier version of this page saved.
   const avatars = Object.create(null);
-  for (const [k, v] of Object.entries(store.get('avatars', {}) || {})) {
-    if (typeof v === 'string' && v.startsWith('data:image/png;base64,')) avatars[k] = v;
-  }
+  try { localStorage.removeItem('slackshot:avatars'); } catch {}
 
   // ---------- parsing ----------
   const TIME = String.raw`(\d{1,2}:\d{2}(?:\s?[AaPp][Mm])?)`;
@@ -250,7 +249,7 @@
   $('card').addEventListener('click', (e) => {
     const av = e.target.closest('.avatar');
     if (!av || !av.dataset.name) return;
-    if (avatars[av.dataset.name] && e.altKey) { delete avatars[av.dataset.name]; store.set('avatars', avatars); render(); return; }
+    if (avatars[av.dataset.name] && e.altKey) { delete avatars[av.dataset.name]; render(); return; }
     pendingName = av.dataset.name; $('file').value = ''; $('file').click();
   });
   $('file').addEventListener('change', () => {
@@ -262,7 +261,6 @@
       const s = Math.min(img.width, img.height);
       c.getContext('2d').drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, 144, 144);
       avatars[pendingName] = c.toDataURL('image/png');
-      store.set('avatars', avatars);
       URL.revokeObjectURL(img.src);
       render();
     };
@@ -301,6 +299,10 @@
     if (saved != null) e[key] = saved;
     e.addEventListener('input', () => { store.set(id, e[key]); render(); });
   }
+  // Nothing pasted survives a reload: start from the sample every time, including
+  // when the browser restores the page (back/forward cache, reopened tab).
+  const reset = () => { $('input').value = SAMPLE; for (const k in avatars) delete avatars[k]; render(); };
+  window.addEventListener('pageshow', reset);
   $('input').value = SAMPLE;
   $('input').addEventListener('input', render);
   render();
